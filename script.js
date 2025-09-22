@@ -45,6 +45,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x000000);
 document.body.appendChild(renderer.domElement);
 renderer.domElement.style.touchAction = "none";
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
 // debug mode setup
 const DEBUG_MODE = false;
@@ -86,6 +87,25 @@ function clamp(value, min, max) {
 
 // image loader
 const textureLoader = new THREE.TextureLoader();
+
+// responsive scaling for mobile: shrink tile size and spacing
+const BASE_IMAGE_WIDTH = 7;
+const BASE_SPACING = 10;
+const BASE_LOOK_AT_RANGE = 20;
+
+function applyResponsiveScale() {
+  const w = window.innerWidth;
+  let scale = 1;
+  if (w <= 400) scale = 0.5;
+  else if (w <= 600) scale = 0.6;
+  else if (w <= 768) scale = 0.7;
+  else if (w <= 1024) scale = 0.85;
+  else scale = 1;
+
+  params.imageWidth = BASE_IMAGE_WIDTH * scale;
+  params.spacing = BASE_SPACING * scale;
+  params.lookAtRange = Math.max(12, BASE_LOOK_AT_RANGE * scale);
+}
 
 // gallery mathematics functions
 function calculateRotations(x, y) {
@@ -188,8 +208,12 @@ function createImagePlane(row, col) {
   );
 
   const texture = textureLoader.load(imageData.name);
-  texture.minFilter = THREE.LinearFilter;
+  texture.generateMipmaps = true;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
   texture.magFilter = THREE.LinearFilter;
+  if (renderer.capabilities.getMaxAnisotropy) {
+    texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  }
 
   const material = new THREE.MeshBasicMaterial({
     map: texture,
@@ -277,6 +301,9 @@ window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  applyResponsiveScale();
+  updateGallery();
 });
 
 // Gyro controls (optional, off by default). Enable by calling enableGyroControls() or pressing 'g'
@@ -386,5 +413,6 @@ function animate() {
 }
 
 // initialize gallery and start animation
+applyResponsiveScale();
 updateGallery();
 animate();

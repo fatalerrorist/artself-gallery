@@ -57,7 +57,7 @@ nav p {
 h1 {
   text-transform: uppercase;
   font-family: "Instrument Serif", serif;
-  font-size: 7.5vw;
+  font-size: clamp(60px, 16vw, 160px);
   letter-spacing: -0.025em;
   line-height: 1;
   transform-style: preserve-3d;
